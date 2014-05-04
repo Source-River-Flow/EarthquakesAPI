@@ -53,6 +53,7 @@ exports.findAll = function(req, res) {
         filterList.push({key:'near', value: req.query.near});
     }
 
+
 /*    if (req.query.on) {
         console.log(req.query);
         db.collection('earthquakes', function(err, collection) {
