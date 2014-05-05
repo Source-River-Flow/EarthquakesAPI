@@ -34,9 +34,6 @@ exports.initDatabase = function(callback) {
                 console.log("The 'earthquakes' collection doesn't exist. Creating it with sample data...");
                 populateDB();
             }
-            else {
-                console.log("The 'earthquakes' collection does exist. Use existing ones.");
-            }
             callback();
         });
     });
