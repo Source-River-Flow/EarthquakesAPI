@@ -1,0 +1,12 @@
+{
+  "dev": {
+    "database": {
+      "url": "mongodb://localhost:27017"
+    }
+  },
+  "production": {
+    "database": {
+      "url": "mongodb://heroku_app24837463:h2kgfat8b2l8sg88p7u4u2cssq@ds043987.mongolab.com:43987/heroku_app24837463"
+    }
+  }
+}
