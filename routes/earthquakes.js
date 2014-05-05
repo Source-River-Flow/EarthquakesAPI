@@ -44,6 +44,37 @@ exports.findById = function(req, res) {
         });
     });
 };
+
+/*
+    GET /earthquakes.json
+    # Returns all earthquakes
+
+    GET /earthquakes.json?on=1364582194
+    # Returns earthquakes on the same day (UTC) as the unix timestamp 1364582194
+
+    GET /earthquakes.json?since=1364582194
+    # Returns earthquakes since the unix timestamp 1364582194
+
+    GET /earthquakes.json?over=3.2
+    # Returns earthquakes > 3.2 magnitude
+
+    GET /earthquakes.json?near=36.6702,-114.8870
+    # Returns all earthquakes within 5 miles of lat: 36.6702, lng: -114.8870
+
+    NOTES:
+
+    The endpoint should be able to take any combination of GET params, and
+    filter the results properly. If on and since are both present, it should
+    return results since the timestamp until the end of that day.
+
+    EXAMPLES:
+
+    GET /earthquakes.json?over=3.2&near=36.6702,-114.8870&since=1364582194
+    # Returns all earthquakes over 3.2 magnitude within 5 miles of 36.6702,-114.8870 since 2013-03-29 18:36:34 UTC
+
+    GET /earthquakes.json?over=3.2&on=1364582194&since=1364582194
+    # Returns all earthquakes over 3.2 magnitude between 2013-03-29 18:36:34 UTC and 2013-03-29 23:59:59 UTC
+*/
  
 exports.findAll = function(req, res) {
     //Add queries to this list so we can process them later at once
