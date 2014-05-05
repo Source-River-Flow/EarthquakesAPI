@@ -3,7 +3,19 @@ var mongo = require('mongodb');
 var Server = mongo.Server,
     Db = mongo.Db,
     BSON = mongo.BSONPure;
-	ObjectID = mongo.ObjectID;
+    ObjectID = mongo.ObjectID;
+
+/*
+var mongoUri = process.env.MONGOLAB_URI ||
+  process.env.MONGOHQ_URL ||
+  'mongodb://localhost/mydb';
+
+mongo.Db.connect(mongoUri, function (err, db) {
+  db.collection('mydocs', function(er, collection) {
+    collection.insert({'mykey': 'myvalue'}, {safe: true}, function(er,rs) {
+    });
+  });
+}); */
  
 var server = new Server('localhost', 27017, {auto_reconnect: true});
 db = new Db('earthquakesDB', server);
@@ -16,9 +28,9 @@ db.open(function(err, db) {
                 console.log("The 'earthquakes' collection doesn't exist. Creating it with sample data...");
                 populateDB();
             }
-			else {
-				 console.log("The 'earthquakes' collection does exist. Use existing ones.");
-			}
+            else {
+                 console.log("The 'earthquakes' collection does exist. Use existing ones.");
+            }
         });
     }
 });
@@ -41,7 +53,7 @@ exports.findAll = function(req, res) {
         filterList.push({key:'on', value: req.query.on});
     }
 
-    if (req.query.on) {
+    if (req.query.since) {
         filterList.push({key:'since', value: req.query.since});
     }
 
@@ -73,10 +85,43 @@ exports.findAll = function(req, res) {
 };
 
 var filterResults = function(items, filterList) {
-    //console.log(filterList);
     var filteredItem = [];
 
-    for (filter in filterList) {
+    for (filter in filterList) {   
+        if (filterList[filter].key == 'on') {
+            var inputDate = new Date(filterList[filter].value * 1000);
+            inputDate = Date.UTC(inputDate.getUTCFullYear(), inputDate.getUTCMonth(), inputDate.getUTCDate());
+
+            for (i in items) {
+                var Datetime = new Date(Date.parse(items[i].Datetime));
+                
+                Datetime = Date.UTC(Datetime.getUTCFullYear(), Datetime.getUTCMonth(), Datetime.getUTCDate());
+                var ms = Math.abs(inputDate-Datetime);
+                dayDiff = Math.floor(ms/1000/60/60/24);
+
+                if (dayDiff == 0) {
+                    filteredItem.push(items[i]);
+                }
+            } 
+            items = filteredItem;
+            filteredItem = [];
+        }  
+
+        if (filterList[filter].key == 'since') {
+            var inputDate = new Date(filterList[filter].value * 1000);
+
+            for (i in items) {
+                var Datetime = new Date(Date.parse(items[i].Datetime));
+                
+                if (Datetime-inputDate >= 0) {
+                    filteredItem.push(items[i]);
+                }
+            } 
+            items = filteredItem;
+            filteredItem = [];
+        }  
+
+
         if (filterList[filter].key == 'over') {
             for (i in items) {
                 if (items[i].Magnitude > filterList[filter].value) {
@@ -85,27 +130,56 @@ var filterResults = function(items, filterList) {
             } 
             items = filteredItem;
             filteredItem = [];
-        }            
+        }    
 
         if (filterList[filter].key == 'near') {
+            var inputLocationForCompare = filterList[filter].value.split(',');
+
             for (i in items) {
-                if (withXMiles(5)) {
+                var myLat = parseFloat(items[i].Lat);
+                var myLon = parseFloat(items[i].Lon);
+
+                if (withXMiles(myLat,myLon, parseFloat(inputLocationForCompare[0]), parseFloat(inputLocationForCompare[1]),5)) {
                     filteredItem.push(items[i]);
                 }
             } 
             items = filteredItem;
             filteredItem = [];
-        }  
-      
+        }   
     }
 
-    //console.log(filteredItem);
     return items;
 }
 
-//To do: implement this function
-var withXMiles = function(x) {
-    return true;
+/** Converts numeric degrees to radians */
+Math.radians = function(deg)
+ {
+    return deg * (Math.PI/180);
+ }
+
+//Given two points, return true if they are within x miles
+//Use the ‘haversine’ formula to calculate the great-circle distance between two points
+//http://www.movable-type.co.uk/scripts/latlong.html
+var withXMiles = function(lat1, lon1, lat2, lon2, x) {
+    var R = 3959; // miles
+
+    var φ1 = Math.radians(lat1);
+    var φ2 = Math.radians(lat2);
+    var Δφ = Math.radians(lat2-lat1);
+    var Δλ = Math.radians(lon2-lon1);
+
+    var a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    var d_in_miles = R * c;
+
+    if (d_in_miles <= x) {
+        return true;
+    }
+
+    return false;
 }
  
 exports.addEarthquake = function(req, res) {
